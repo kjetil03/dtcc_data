@@ -7,7 +7,7 @@
 #' @importFrom dplyr filter mutate left_join rename select if_else group_by summarise arrange bind_rows ungroup
 #' @importFrom stringr str_replace str_replace_all str_trunc
 #' @import magrittr
-#' @importFrom shiny fluidRow tabPanel dateRangeInput checkboxInput conditionalPanel reactive observeEvent downloadHandler shinyApp runApp downloadButton numericInput HTML textInput h1 br
+#' @importFrom shiny fluidRow sidebarLayout verbatimTextOutput splitLayout tags titlePanel column tabsetPanel radioButtons checkboxGroupInput selectInput div hr icon sidebarPanel renderUI mainPanel uiOutput fluidPage tabPanel dateRangeInput checkboxInput conditionalPanel reactive observeEvent downloadHandler shinyApp runApp downloadButton numericInput HTML textInput h1 br
 #' @importFrom shinyWidgets pickerInput updatePickerInput pickerOptions
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom plotly plotlyOutput renderPlotly as_widget
@@ -38,11 +38,11 @@ dtcc_app <- function(load_source_data = T,
   if(load_source_data) {
     cat("Laster inn data, vennligst vent.
         \nDette kan ta litt tid, avhengig av hastighet på tilkobling etc., vanligvis
-        \n opptil ett og et halvt minutt.
+        \nopptil ett og et halvt minutt.
         \n 
         \nAlternativ kan man laste ned datasett på forhånd, og kjøre applikasjon
         \nmed 'load_source_data = F'. Man må da spesifisere navn på forhåndsinnlastet
-        \n datasett med parameteren pre_loaded_data")
+        \ndatasett med parameteren pre_loaded_data")
     #Hent rådata
     raw_data = GetDTCCData()
     
@@ -51,7 +51,7 @@ dtcc_app <- function(load_source_data = T,
     
   } else{
     #Sjekk om pre_loaded_data er spesifisert riktig.
-    if( is.data.frame(pre_loaded_data) & 
+    if( is.data.frame(pre_loaded_data) && 
         names(pre_loaded_data) == c( "IssuerName",  
                                      "CUSIP",           
                                      "ProductType",     
@@ -71,10 +71,13 @@ dtcc_app <- function(load_source_data = T,
                                      "Maturity",
                                      "d_bank",
                                      "ParentName",
-                                     "CountryCode" )) {
+                                     "CountryCode",
+                                     "NiborBank")) {
       
+      raw_data = pre_loaded_data
       
       print("Datasett ser OK ut, starter applikasjon") 
+      
     }  else{
       stop(cat("Nødvendig datasett ikke funnet. Spesifiser et datasett hentet
                n\ med GetDTCCData-funksjonen i pre_loaded_data_feltet"))
@@ -84,11 +87,54 @@ dtcc_app <- function(load_source_data = T,
   
   
   
+  bloom_choices = c(
+    "Libor 1m" =  "us0001m_index_px_last",
+    "Libor 2m" =  "us0002m_index_px_last",
+    "Libor 3m" = "us0003m_index_px_last",
+    "Libor 6m" = "us0006m_index_px_last",
+    "DNB CP-indeks 1m" = "dnorus1m_index_px_last",
+    "DNB CP-indeks 2m" = "dnorus2m_index_px_last",
+    "DNB CP-indeks 3m" =  "dnorus3m_index_px_last",
+    "DNB CP-indeks 6m" =  "dnorus6m_index_px_last",
+    "BSBY 1m" =  "bsby1m_index_px_last",
+    "BSBY 2m" = "bsby2m_index_px_last",
+    "BSBY 3m" = "bsby3m_index_px_last",
+    "BSBY 6m" = "bsby6m_index_px_last",
+    "Kliem 1m" = "usdra_klmm_curncy_px_last",
+    "Kliem 2m" = "usdrb_klmm_curncy_px_last",
+    "Kliem 3m" = "usdrc_klmm_curncy_px_last",
+    "Kliem 6m" = "usdrf_klmm_curncy_px_last",
+    "1m EUR OIS swappet til USD" = "eur_1m_ois_swapped",
+    "2m EUR OIS swappet til USD" = "eur_2m_ois_swapped",
+    "3m EUR OIS swappet til USD" = "eur_3m_ois_swapped",
+    "6m EUR OIS swappet til USD" = "eur_6m_ois_swapped",
+    "Styringsrente i USA" = "fdtr_index_px_last",
+    "US OIS 1m" = "ussoa_bgnl_curncy_px_last",
+    "US OIS 2m" = "ussob_bgnl_curncy_px_last",
+    "US OIS 3m" = "ussoc_bgnl_curncy_px_last",
+    "US OIS 6m" = "ussof_bgnl_curncy_px_last",
+    "IOER" = "irrbioer_index_px_last")
+  
+  
+  
+  maturities_names = c("volume" = "matured",
+                       "cummulative volume" = "cumsum_matured",
+                       "percent of outstanding" = "percent_matured",
+                       "cummulative percent of outstanding" = "percent_matured_cumsum")
+  
+  textInputRow<-function (inputId, label, value = "")
+  {
+    div(style="display:inline-block",
+        tags$label(label, `for` = inputId),
+        tags$input(id = inputId, type = "text", value = value,class="input-small"))
+  }
+  
+  
   
   ui <- fluidPage(
     
     # Header
-    headerPanel(h1(div(icon("search-usd"), "CP/CD: Amerikanske pengemarkedsdata"),
+    titlePanel(h1(div( "CP/CD: Amerikanske pengemarkedsdata"),
                    align = "center",
                    style = "background-color:#1d2f3e; padding: 20px; color:white"),
                 windowTitle = "CP/CD"),
