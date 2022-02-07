@@ -71,8 +71,7 @@ dtcc_app <- function(load_source_data = T,
                                      "Maturity",
                                      "d_bank",
                                      "ParentName",
-                                     "CountryCode",
-                                     "NiborBank")) {
+                                     "CountryCode")) {
       
       raw_data = pre_loaded_data
       
